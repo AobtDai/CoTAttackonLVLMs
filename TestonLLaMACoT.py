@@ -59,7 +59,7 @@ inputs = processor(
     add_special_tokens=False,
     return_tensors="pt"
 ).to(model.device)
-# print(type(inputs))
+print((inputs))
 # print("==============\n", inputs["input_ids"].shape,  inputs["pixel_values"].shape, "\n===================\n")
 ### text chart->torch.Size([1, 85]); 
 ### images->torch.Size([1(batch size), 2(account), 4(feature), 3(channel), 560, 560]) resized to (560*560)

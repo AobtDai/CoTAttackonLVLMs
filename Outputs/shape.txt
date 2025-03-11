@@ -1,0 +1,2 @@
+True
+<class 'NoneType'> None
