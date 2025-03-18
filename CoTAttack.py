@@ -12,8 +12,19 @@ from torchvision import transforms
 from AttackEnv import AttackEnv
 
 class CoTAttack:
-    def __init__(self, victim_model, prompt_temp_path):
+    def __init__(self, 
+                 victim_model, 
+                 text_encoder,
+                 prompt_temp_path):
         self.victim_model = victim_model
-        self.env = AttackEnv(victim_model, prompt_temp_path)
-
+        self.text_encoder = text_encoder
+        self.env = AttackEnv(victim_model, 
+                             text_encoder,
+                             prompt_temp_path)
+        '''
+        t = self.env.reset()
+        print(t.shape, "\n", t) 
+        # shape: (batch_size, length of embedding); t: embedding
+        '''
+        
     
