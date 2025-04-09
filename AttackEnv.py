@@ -35,12 +35,17 @@ class AttackEnv:
         return self.prompt_repo
     
     def reset(self):
+        '''
+        Note: 
+        because the embedding cannot be converted into natural text again, 
+        at least it is difficult to some extent,
+        it is not very suitable to return embedding in RESET
+        '''
         random_index = torch.randint(0, len(self.prompt_repo), (1,)).item()
 
         text_embedding, _ = self.text_encoder(prompt = self.prompt_repo[random_index])
 
         return text_embedding
-        # encode to tokens
     
     def step(self):
         pass
