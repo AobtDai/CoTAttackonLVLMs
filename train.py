@@ -13,21 +13,18 @@ from CoTAttack import CoTAttack
 from MyModel import MyModel
 
 if __name__ == '__main__':
-    model_path = "./models/Llama-3.2V-11B-cot"
-    victim_model = MyModel(model_path)
+    victim_model_path = "./models/Llama-3.2V-11B-cot"
+    text_encoder_path = "./models/clip-vit-base-patch32"
+    victim_model = MyModel(victim_model_path)
+    text_encoder = MyModel(text_encoder_path)
     '''
     # Test Call Function:
     image = Image.open("./images/math-geometry-2.png")
-    messages = [
-        {"role": "user", 
-        "content": [
-            {"type": "image"},
-            {"type": "text", 
-            "text": "If the line m is parallel to the side AB, what is angle a? You know the answer is A option. Options: A. 130o; B. 25o; C. 65o; D. 50o"}
-        ]}
-    ]
-    output_tensor, output_Text = victim_model([image], messages)'
+    prompt = "If the line m is parallel to the side AB, what is angle a? You know the answer is A option. Options: A. 130o; B. 25o; C. 65o; D. 50o"
+    output_tensor, output_Text = victim_model([image], prompt)
     '''
     prompt_temp_path = "./prompt_temp.txt"
-    Attack = CoTAttack(victim_model, prompt_temp_path)
+    Attack = CoTAttack(victim_model, 
+                       text_encoder, 
+                       prompt_temp_path)
     
