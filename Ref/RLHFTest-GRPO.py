@@ -4,6 +4,7 @@ from datasets import load_dataset, Dataset
 from transformers import AutoTokenizer, AutoModelForCausalLM
 from trl import GRPOConfig, GRPOTrainer
 # https://huggingface.co/docs/trl/grpo_trainer
+from peft import PrefixTuningConfig, LoraConfig
 from typing import Union
 
 SYSTEM_PROMPT = """
@@ -76,7 +77,7 @@ def reasoning_reward_func(completions, **kwargs) -> list[float]:
 def int_reward_func(completions, **kwargs) -> list[float]:
     responses = [completion[0]['content'] for completion in completions]
     extracted_responses = [extract_xml_answer(r) for r in responses]
-    return [0.5 if r.isdigit() else 0.0 for r in extracted_responses]
+    return [1.0 if r.isdigit() else 0.0 for r in extracted_responses]
 
 
 def strict_format_reward_func(completions, **kwargs) -> list[float]:
@@ -84,28 +85,28 @@ def strict_format_reward_func(completions, **kwargs) -> list[float]:
     pattern = r"^<reasoning>\n.*?\n</reasoning>\n<answer>\n.*?\n</answer>\n$"
     responses = [completion[0]["content"] for completion in completions]
     matches = [re.match(pattern, r) for r in responses]
-    return [0.1 if match else 0.0 for match in matches]
+    return [0.5 if match else 0.0 for match in matches]
 
 def soft_format_reward_func(completions, **kwargs) -> list[float]:
     """Reward function that checks if the completion has a specific format."""
     pattern = r"<reasoning>.*?</reasoning>\s*<answer>.*?</answer>"
     responses = [completion[0]["content"] for completion in completions]
     matches = [re.match(pattern, r) for r in responses]
-    return [0.1 if match else 0.0 for match in matches]
+    return [0.3 if match else 0.0 for match in matches]
 
 
 def count_xml(text) -> float:
     count = 0.0
     if text.count("<reasoning>\n") == 1:
-        # count += 0.125
-        count += 0.05
+        count += 0.125
+        # count += 0.05
     if text.count("\n</reasoning>\n") == 1:
-        count += 0.05
+        count += 0.125
     if text.count("\n<answer>\n") == 1:
-        count += 0.05
+        count += 0.125
         count -= len(text.split("\n</answer>\n")[-1])*0.001
     if text.count("\n</answer>") == 1:
-        count += 0.05
+        count += 0.125
         count -= (len(text.split("\n</answer>")[-1]) - 1)*0.001
     return count
 
@@ -115,12 +116,15 @@ def xmlcount_reward_func(completions, **kwargs) -> list[float]:
 
 
 dataset = get_gsm8k_questions()
-model_name = "../models/Qwen2.5-0.5B-Instruct"
+model_name = "../models/Qwen2.5-7B-Instruct"
+
+# model_name = "../models/Qwen2.5-0.5B-Instruct"
 # model_name = "../models/Qwen2.5-3B-Instruct"
 
-output_dir="../Outputs/qwen2.5-finetuned_GRPO-0.5b"
-run_name="Qwen-2.5B-GRPO-gsm8k"
-checkpoint_path = "../Outputs/qwen2.5-finetuned_GRPO-0.5b/checkpoint-233"
+output_dir="../Outputs/qwen2.5-finetuned_GRPO-7B"
+run_name="Qwen-7B-GRPO-gsm8k"
+checkpoint_path = "../Outputs/qwen2.5-finetuned_GRPO-7B/checkpoint-7360"
+logging_dir = "../Outputs/qwen2.5-finetuned_GRPO-7B/logs/"
 
 training_args = GRPOConfig(
     output_dir=output_dir,
@@ -132,28 +136,51 @@ training_args = GRPOConfig(
     warmup_ratio = 0.1,
     lr_scheduler_type='cosine',
     logging_steps=1,
+    # fp16=True,
     bf16=True,
     per_device_train_batch_size=2,
     gradient_accumulation_steps=4,
     num_generations=2,
+    # num_processes = 1,
     # num_generations=16,
     max_prompt_length=256,
     max_completion_length=200,
-    num_train_epochs=1,
-    save_steps=100,
+    num_train_epochs=10,
+    save_steps=20,
     max_grad_norm=0.1,
     log_on_each_node=False,
     use_vllm=False,
     vllm_gpu_memory_utilization=.3,
-    vllm_device="cuda:0",
-    report_to="none", #I'm disabling Wandb.
+    vllm_device="cuda",
+    # report_to="none", #I'm disabling Wandb.
+    report_to="tensorboard", 
+    logging_dir=logging_dir,
     resume_from_checkpoint=checkpoint_path
+)
+
+# prefix_config = PrefixTuningConfig(
+#     peft_type="PREFIX_TUNING",
+#     task_type="CAUSAL_LM",
+#     num_virtual_tokens=20,      # 虚拟前缀的长度
+#     token_dim=2048,             # 前缀嵌入的维度，同原模型
+#     num_layers=36,              # 模型隐藏层数，同原模型
+#     prefix_projection=True,     # 是否对前缀进行投影
+#     encoder_hidden_size=2048    # 前缀编码器的隐藏层大小，同原模型
+# )
+
+peft_config = LoraConfig(
+    lora_alpha=16,
+    lora_dropout=0.1,
+    r=64,
+    bias="none",
+    task_type="CAUSAL_LM",
 )
 
 model = AutoModelForCausalLM.from_pretrained(
     # model_name,
     checkpoint_path,
     torch_dtype=torch.bfloat16,
+    # torch_dtype=torch.float16,
     device_map=None
 ).to("cuda")
 
@@ -171,7 +198,8 @@ trainer = GRPOTrainer(
         correctness_reward_func],
     args=training_args,
     train_dataset=dataset,
-    #peft_config=peft_config
+    # peft_config=prefix_config,
+    peft_config=peft_config,
 )
 trainer.train()
 
