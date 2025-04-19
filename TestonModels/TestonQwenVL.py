@@ -25,23 +25,65 @@ processor = AutoProcessor.from_pretrained(model_path)
 # min_pixels = 256*28*28
 # max_pixels = 1280*28*28
 # processor = AutoProcessor.from_pretrained("Qwen/Qwen2.5-VL-7B-Instruct", min_pixels=min_pixels, max_pixels=max_pixels)
-for i in range(1, 10000):
+for i in range(1, 2):
     messages = [
         {
-            "role": "user",
+            "role": "system",
             "content": [
                 {
                     "type": "image",
                     "image": "./Overview.png",
                 },
-                {"type": "text", "text": "Describe this image."},
+                {
+                    "type": "text", 
+                    "text": '''
+                        You are a helpful robot assistant located in the Stage in the south. 
+                        You have access to an input image that represents the layout of the house. 
+                        Users will provide you with a series of instructions. 
+                        Your responses should be structured in the following format, 
+                        which includes both a reasoning section and a sequence of actions:
+                        
+                        <Reasoning>
+                        Here, you should provide a detailed explanation of the steps required to complete the task, 
+                        considering the layout of the house.
+                        </Reasoning>
+
+                        <Action_1>
+                        {action: "[specific action]", target: "[location / object]"}
+                        </Action_1>
+
+                        <Action_2>
+                        {action: "[specific action]", target: "[location / object]"}
+                        </Action_2>
+
+                        ...
+
+                        <Action_i>
+                        {action: "[specific action]", target: "[location / object]"}
+                        </Action_i>
+
+                        ...
+
+                        <Action_n>
+                        {action: "[specific action]", target: "[location / object]"}
+                        </Action_n>
+                        '''
+                }
+            ],
+        },
+        {
+            "role": "user",
+            "content": [
+                {
+                    "type": "text", 
+                    "text": "Please help me get my black bottle, I think it's in the Open Workshop Area at LFT. Then give this bottle to Mr. Qiu, I think he is in the meeting room, next to th Relax room. Finally, please help me get my laptop which is at Mr. Qiu's place."},
             ],
         }
     ]
 
     # Preparation for inference
     text = processor.apply_chat_template(
-        messages, tokenize=False, add_generation_prompt=True
+        messages, tokenize=False, add_generation_prompt=False
     )
     image_inputs, video_inputs = process_vision_info(messages)
     inputs = processor(

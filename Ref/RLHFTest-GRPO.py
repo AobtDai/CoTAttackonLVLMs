@@ -116,15 +116,15 @@ def xmlcount_reward_func(completions, **kwargs) -> list[float]:
 
 
 dataset = get_gsm8k_questions()
-model_name = "../models/Qwen2.5-7B-Instruct"
+model_name = "../models/Qwen2.5-32B-Instruct"
 
 # model_name = "../models/Qwen2.5-0.5B-Instruct"
 # model_name = "../models/Qwen2.5-3B-Instruct"
 
-output_dir="../Outputs/qwen2.5-finetuned_GRPO-7B"
-run_name="Qwen-7B-GRPO-gsm8k"
-checkpoint_path = "../Outputs/qwen2.5-finetuned_GRPO-7B/checkpoint-7360"
-logging_dir = "../Outputs/qwen2.5-finetuned_GRPO-7B/logs/"
+output_dir="../Outputs/qwen2.5-finetuned_GRPO-32B"
+run_name="Qwen-32B-GRPO-gsm8k"
+checkpoint_path = "../Outputs/qwen2.5-finetuned_GRPO-32B/checkpoint-900"
+# logging_dir = "../Outputs/qwen2.5-finetuned_GRPO-32B/logs/"
 
 training_args = GRPOConfig(
     output_dir=output_dir,
@@ -154,8 +154,8 @@ training_args = GRPOConfig(
     vllm_device="cuda",
     # report_to="none", #I'm disabling Wandb.
     report_to="tensorboard", 
-    logging_dir=logging_dir,
-    resume_from_checkpoint=checkpoint_path
+    # logging_dir=logging_dir,
+    # resume_from_checkpoint=checkpoint_path
 )
 
 # prefix_config = PrefixTuningConfig(
@@ -177,8 +177,8 @@ peft_config = LoraConfig(
 )
 
 model = AutoModelForCausalLM.from_pretrained(
-    # model_name,
-    checkpoint_path,
+    model_name,
+    # checkpoint_path,
     torch_dtype=torch.bfloat16,
     # torch_dtype=torch.float16,
     device_map=None
