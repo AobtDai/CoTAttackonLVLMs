@@ -123,7 +123,7 @@ model_name = "../models/Qwen2.5-32B-Instruct"
 
 output_dir="../Outputs/qwen2.5-finetuned_GRPO-32B"
 run_name="Qwen-32B-GRPO-gsm8k"
-checkpoint_path = "../Outputs/qwen2.5-finetuned_GRPO-32B/checkpoint-900"
+checkpoint_path = "../Outputs/qwen2.5-finetuned_GRPO-32B/checkpoint-560"
 # logging_dir = "../Outputs/qwen2.5-finetuned_GRPO-32B/logs/"
 
 training_args = GRPOConfig(
