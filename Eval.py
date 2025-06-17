@@ -21,7 +21,7 @@ def get_llm_response(msg, system_prompt:str=None):
          api_version=config["api"]["api_version"]
      )
      if not system_prompt:
-        with open("./TxtSet/system_prompt.txt", "r", encoding="utf-8") as file:
+        with open("./TxtSet/Text_Aware_Eval.txt", "r", encoding="utf-8") as file:
             system_prompt = file.read()
  
      response = client.chat.completions.create(
